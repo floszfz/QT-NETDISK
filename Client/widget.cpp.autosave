@@ -1,0 +1,48 @@
+#include "widget.h"
+#include "ui_widget.h"
+
+#include <QHostAddress>
+#include <QDebug>
+#include <QFile>
+#include <QMessageBox>
+
+Widget::Widget(QWidget *parent): QWidget(parent), ui(new Ui::Widget)
+{
+    ui->setupUi(this);
+    loadConfig();
+
+    connect(&m_tcpSocket,&QTcpSocket::connected,this,&Widget::showConnect);
+    //客户端的套接字发出链接的信号，连接到槽函数上
+    m_tcpSocket.connectToHost(QHostAddress(m_strIP),m_usPort);//连接服务器
+    //将IP和端口号传进去，IP要转成地址的类型
+}
+
+Widget::~Widget()
+{
+    delete ui;
+}
+void Widget::loadConfig()//配置
+{
+    QFile file(":/client.config");//读配置文件
+    if(file.open(QIODevice::ReadOnly)){//以只读的方式打开文件
+
+        QByteArray baData = file.readAll();//读取文件数据
+        QString strData = QString(baData);//字符串展现数据
+
+        QStringList strList = strData.split("\r\n");//将两个字段按照\r\n分割
+        m_strIP = strList.at(0);//地址
+        m_usPort = strList.at(1).toUShort();//端口号、强转成字符串类型
+        qDebug()<<"ip:"<<m_strIP<<"port:"<<m_usPort;//打印
+        file.close();
+
+    }else{
+        QMessageBox::critical(this,"打开配置","打开配置失败");
+        //弹窗弹出警告
+    }
+
+}
+void Widget::showConnect()
+{
+    qDebug()<<"连接服务器成功！";//链接到槽函数上
+}
+
